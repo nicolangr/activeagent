@@ -178,37 +178,22 @@ end
 
 ### Embeddings Support
 
-Generate embeddings for text using Ollama's embedding models:
+Generate embeddings locally using Ollama's embedding models. See the [Embeddings Framework Documentation](/docs/framework/embeddings) for comprehensive coverage.
 
-```ruby
-class EmbeddingAgent < ApplicationAgent
-  generate_with :ollama, 
-    model: "llama3",
-    embedding_model: "nomic-embed-text"  # Specialized embedding model
-  
-  def generate_embedding
-    @text = params[:text]
-    
-    # Generate embedding using embed_now
-    generation = self.class.with(message: @text).prompt_context
-    response = generation.embed_now
-    
-    # Response contains embedding vector
-    embedding_vector = response.message.content
-    store_embedding(embedding_vector)
-  end
-  
-  private
-  
-  def store_embedding(vector)
-    # Store in vector database like pgvector, pinecone, etc.
-    VectorStore.create!(
-      content: params[:text],
-      embedding: vector
-    )
-  end
-end
+#### Basic Embedding Generation
+
+<<< @/../test/generation_provider/ollama_provider_test.rb#ollama_provider_embed{ruby:line-numbers}
+
+::: details Response Example
+<!-- @include: @/parts/examples/ollama-provider-test-test-embed-method-works-with-ollama-provider.md -->
+:::
+
+::: warning Connection Required
+Ollama must be running locally. If you see connection errors, start Ollama with:
+```bash
+ollama serve
 ```
+:::
 
 #### Available Embedding Models
 
@@ -224,30 +209,15 @@ ollama pull nomic-embed-text
 ollama pull mxbai-embed-large
 ```
 
-#### Embedding Callbacks
+#### Error Handling
 
-Use callbacks to process embeddings:
+Ollama provides helpful error messages when the service is not available:
 
-```ruby
-class CallbackEmbeddingAgent < ApplicationAgent
-  generate_with :ollama, embedding_model: "nomic-embed-text"
-  
-  before_embedding :prepare_text
-  after_embedding :process_vector
-  
-  private
-  
-  def prepare_text
-    # Preprocess text before embedding
-    @text = @text.downcase.strip
-  end
-  
-  def process_vector
-    # Post-process embedding vector
-    Rails.logger.info "Generated embedding with dimension: #{@response.message.content.size}"
-  end
-end
-```
+<<< @/../test/generation_provider/ollama_provider_test.rb#113-136{ruby:line-numbers}
+
+This ensures developers get clear feedback about connection issues.
+
+For more embedding patterns and examples, see the [Embeddings Documentation](/docs/framework/embeddings).
 
 ## Provider-Specific Parameters
 
@@ -530,7 +500,10 @@ end
 
 ## Related Documentation
 
+- [Embeddings Framework](/docs/framework/embeddings) - Complete guide to embeddings
 - [Generation Provider Overview](/docs/framework/generation-provider)
+- [OpenAI Provider](/docs/generation-providers/openai-provider) - Cloud-based alternative with more models
 - [Configuration Guide](/docs/getting-started#configuration)
 - [Ollama Documentation](https://ollama.ai/docs)
+- [Ollama Model Library](https://ollama.ai/library) - Available models including embedding models
 - [OpenRouter Provider](/docs/generation-providers/open-router-provider) - For cloud alternative
