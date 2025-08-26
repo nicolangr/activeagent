@@ -176,11 +176,85 @@ class StreamingOllamaAgent < ApplicationAgent
 end
 ```
 
+### Embeddings Support
+
+Generate embeddings for text using Ollama's embedding models:
+
+```ruby
+class EmbeddingAgent < ApplicationAgent
+  generate_with :ollama, 
+    model: "llama3",
+    embedding_model: "nomic-embed-text"  # Specialized embedding model
+  
+  def generate_embedding
+    @text = params[:text]
+    
+    # Generate embedding using embed_now
+    generation = self.class.with(message: @text).prompt_context
+    response = generation.embed_now
+    
+    # Response contains embedding vector
+    embedding_vector = response.message.content
+    store_embedding(embedding_vector)
+  end
+  
+  private
+  
+  def store_embedding(vector)
+    # Store in vector database like pgvector, pinecone, etc.
+    VectorStore.create!(
+      content: params[:text],
+      embedding: vector
+    )
+  end
+end
+```
+
+#### Available Embedding Models
+
+- **nomic-embed-text** - High-quality text embeddings (768 dimensions)
+- **mxbai-embed-large** - Large embedding model (1024 dimensions)
+- **all-minilm** - Lightweight embeddings (384 dimensions)
+
+#### Pull Embedding Models
+
+```bash
+# Install embedding models
+ollama pull nomic-embed-text
+ollama pull mxbai-embed-large
+```
+
+#### Embedding Callbacks
+
+Use callbacks to process embeddings:
+
+```ruby
+class CallbackEmbeddingAgent < ApplicationAgent
+  generate_with :ollama, embedding_model: "nomic-embed-text"
+  
+  before_embedding :prepare_text
+  after_embedding :process_vector
+  
+  private
+  
+  def prepare_text
+    # Preprocess text before embedding
+    @text = @text.downcase.strip
+  end
+  
+  def process_vector
+    # Post-process embedding vector
+    Rails.logger.info "Generated embedding with dimension: #{@response.message.content.size}"
+  end
+end
+```
+
 ## Provider-Specific Parameters
 
 ### Model Parameters
 
 - **`model`** - Model name (e.g., "llama3", "mistral")
+- **`embedding_model`** - Embedding model name (e.g., "nomic-embed-text")
 - **`temperature`** - Controls randomness (0.0 to 1.0)
 - **`top_p`** - Nucleus sampling
 - **`top_k`** - Top-k sampling

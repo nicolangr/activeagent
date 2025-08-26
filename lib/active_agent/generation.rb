@@ -52,7 +52,7 @@ module ActiveAgent
 
     def embed_now
       processed_agent.handle_exceptions do
-        processed_agent.run_callbacks(:generation) do
+        processed_agent.run_callbacks(:embedding) do
           processed_agent.embed
         end
       end
