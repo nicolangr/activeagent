@@ -30,9 +30,6 @@ module ActiveAgent
           raw_request: request_params
         )
       end
-
-
-
     end
   end
 end
