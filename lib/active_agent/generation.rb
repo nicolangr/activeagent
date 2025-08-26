@@ -50,6 +50,14 @@ module ActiveAgent
       end
     end
 
+    def embed_now
+      processed_agent.handle_exceptions do
+        processed_agent.run_callbacks(:generation) do
+          processed_agent.embed
+        end
+      end
+    end
+
     private
 
     def processed_agent
