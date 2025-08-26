@@ -58,6 +58,10 @@ module ActiveAgent
       end
     end
 
+    def embed_later(options = {})
+      enqueue_generation :embed_now, options
+    end
+
     private
 
     def processed_agent
