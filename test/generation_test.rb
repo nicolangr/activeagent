@@ -37,20 +37,20 @@ class GenerationTest < ActiveSupport::TestCase
         @enqueue_options = options
         true
       end
-      
+
       def enqueue_called?
         @enqueue_called
       end
-      
+
       def enqueue_method
         @enqueue_method
       end
-      
+
       def enqueue_options
         @enqueue_options
       end
     end
-    
+
     result = generation.embed_later(priority: :high)
     assert result
     assert generation.enqueue_called?
@@ -100,7 +100,7 @@ class GenerationTest < ActiveSupport::TestCase
 
     options_to_test.each do |options|
       generation = ApplicationAgent.with(message: "Test embedding").prompt_context
-      
+
       # Using instance_eval to stub private method
       generation.instance_eval do
         def enqueue_generation(method, opts = {})
@@ -108,16 +108,16 @@ class GenerationTest < ActiveSupport::TestCase
           @enqueue_options = opts
           true
         end
-        
+
         def enqueue_method
           @enqueue_method
         end
-        
+
         def enqueue_options
           @enqueue_options
         end
       end
-      
+
       result = generation.embed_later(options)
       assert result
       assert_equal :embed_now, generation.enqueue_method
