@@ -143,15 +143,35 @@ module ActiveAgent
       end
 
       def responses_response(response, request_params = nil)
-        message_json = response["output"].find { |output_item| output_item["type"] == "message" }
-        message_json["id"] = response.dig("id") if (message_json.blank? or message_json["id"].blank?)
+        # Extract different types of outputs
+        output_items = response["output"] || []
+        
+        # Extract function calls
+        function_calls = output_items.select { |item| item["type"] == "function_call" }
+        
+        # Extract text content (if there are other output types for text)
+        text_outputs = output_items.select { |item| item["type"] == "text" || item["type"] == "message" }
+        content = text_outputs.map { |item| item["content"] || item["text"] }.compact.join
+        
+        # Convert function calls to tool_calls format for compatibility
+        tool_calls = function_calls.map do |fc|
+          {
+            "id" => fc["call_id"],
+            "type" => "function",
+            "function" => {
+              "name" => fc["name"],
+              "arguments" => fc["arguments"]
+            }
+          }
+        end
 
         message = ActiveAgent::ActionPrompt::Message.new(
-          generate_id: message_json["id"],
-          content: message_json["content"].first["text"],
-          role: message_json["role"].intern,
-          action_requested: message_json["finish_reason"] == "tool_calls",
-          raw_actions: message_json["tool_calls"] || [],
+          generation_id: response["id"],
+          content: content,
+          role: :assistant,
+          action_requested: tool_calls.any?,
+          raw_actions: tool_calls,
+          requested_actions: handle_actions(tool_calls),
           content_type: prompt.output_schema.present? ? "application/json" : "text/plain"
         )
 
